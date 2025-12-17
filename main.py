@@ -69,6 +69,18 @@ async def remove(ctx):
 
 
 @bot.command()
+async def poll(ctx, *, question):
+    embed = discord.Embed(title = 'New Poll', description = question)
+    await ctx.message.delete() # Delete the message which initiates the poll, so it looks nicer in chat
+    poll_message = await ctx.send(embed=embed)
+    await poll_message.add_reaction("👍")
+    await poll_message.add_reaction("👎")
+
+
+
+
+
+@bot.command()
 @commands.has_role(role_member)
 async def secret(ctx):
     await ctx.send("Finally a member fr")
