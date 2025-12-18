@@ -28,7 +28,7 @@ class General(commands.Cog):
         print(f"Bot is ready to be deployed, war veteran bot dealing with randoms lol, {self.bot.user.name}")
 
 
-    @commands.command()
+    @commands.command(name="setWelcome")
     @commands.has_permissions(manage_guild=True)
     async def set_welcome_channel(self, ctx, channel: discord.TextChannel):
         data = self.load_settings()
