@@ -8,7 +8,7 @@ class Gimmick(commands.Cog):
         self.bot = bot
 
 
-    @commands.command(name = "8ball", aliases = "8b")
+    @commands.command(name = "8ball", aliases = ["8b"])
     async def eight_ball(self, ctx):
         responses = {
             'yes': ("Yes, of course!", "I am confident, YES.", "Yes, yes, yes yes!", "As much as I hate you, yes.", "Yea whatever twin"),
