@@ -1,7 +1,6 @@
 import discord
 import random
 from discord.ext import commands
-import os
 
 class Gimmick(commands.Cog):
     def __init__(self, bot : commands.Bot):
