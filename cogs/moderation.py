@@ -47,6 +47,50 @@ class Moderation(commands.Cog):
 
 
 
+    @commands.command()
+    @commands.has_permissions(kick_members=True)
+    async def kick(self,ctx, member: discord.Member, *, reason: str = None):
+        if reason is None:
+            reason = f"no reason was given for being kicked from {ctx.message.guild.name}"
+        else:
+            reason = reason + f", you've been kicked from {ctx.message.guild.name}"
+
+        try:
+            embed_kick = discord.Embed(title="Kick", description=f"{member.mention} has been kicked!", colour=discord.Colour.red(), timestamp=datetime.datetime.now(datetime.timezone.utc))
+            embed_kick.add_field(name="Reason:", value=reason, inline=False)
+            embed_kick.set_thumbnail(url=member.display_avatar.url)
+            await ctx.reply(embed=embed_kick)
+            
+            await member.send(embed=embed_kick)
+            await member.kick()
+        except discord.Forbidden:
+            await ctx.send("I don't have permission to kick members.")
+
+
+
+
+
+    @commands.command()
+    @commands.has_permissions(ban_members=True)
+    async def ban(self,ctx, member: discord.Member, *, reason: str = None):
+        if reason is None:
+            reason = f"no reason was given for being banned from {ctx.message.guild.name}"
+        else:
+            reason = reason + f", you've been banned from {ctx.message.guild.name}"
+
+        try:
+            embed_kick = discord.Embed(title="ban", description=f"{member.mention} has been banned!?", colour=discord.Colour.dark_red(), timestamp=datetime.datetime.now(datetime.timezone.utc))
+            embed_kick.add_field(name="Reason:", value=reason, inline=False)
+            embed_kick.set_thumbnail(url=member.display_avatar.url)
+            await ctx.reply(embed=embed_kick)
+            
+            await member.send(embed=embed_kick)
+            await member.ban()
+        except discord.Forbidden:
+            await ctx.send("I don't have permission to ban members.")
+
+
+
 
 
 async def setup(bot):
