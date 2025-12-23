@@ -61,7 +61,9 @@ class General(commands.Cog):
 
         if target_channel: # send message if valid channel found
             try:
-                await target_channel.send(f"Welcome to the server {member.mention}!")
+                embed = discord.Embed(title="Welcome!", description=f"Welcome to the server {member.mention}!", color=discord.Color.green())
+                embed.set_thumbnail(url=member.display_avatar.url)
+                await target_channel.send(embed=embed)
             except discord.Forbidden:
                 print(f"Permission error in {member.guild.name}")
 
