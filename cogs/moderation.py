@@ -10,7 +10,7 @@ class Moderation(commands.Cog):
 
 
     @commands.command(name="temporary_mute", aliases=["tm", "tempm", "tmute", "timeout"])
-    @commands.has_permissions(mute_members=True)
+    @commands.has_permissions(administrator=True)
     async def temp_mute(self, ctx, member: discord.Member, time_amount: int, duration_type: str, *, reason: str = None): #apparently * makes it greedy
         if reason is None:
             reason = "no reason was given"
