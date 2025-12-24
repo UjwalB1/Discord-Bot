@@ -14,6 +14,7 @@ class Summarizer(commands.Cog):
 
 
     @commands.hybrid_command(name="summarize", description="Uji bot summarizes the last 200 messages in the channel, ignoring bot messages.")
+    @commands.cooldown(1, 600, commands.BucketType.guild) # add cooldown so I don't use all my tokens rapidly
     async def summarize(self, ctx):
         await ctx.defer()
         messages = []
@@ -26,7 +27,7 @@ class Summarizer(commands.Cog):
 
         message_history = "\n".join(messages)
 
-        prompt = f"You go by the name 'Uji bot,' and will summarize the message_history, in a non-serious joking manner, while still being concise and occassionally poke fun at certain things in the conversation and give opinions on it for jokes:\n\n {message_history}"
+        prompt = f"You go by the name 'Uji bot,' and will summarize the message_history, in a non-serious joking manner, while still being concise and occassionally poke fun at certain things in the conversation and give opinions on it for jokes, REMEMBER TO KEEP RESPONSE RELATIVELY SHORT:\n\n {message_history}"
 
         response = self.client.models.generate_content( # gen the text output and hold it within the response var
             model="gemini-2.5-flash",
@@ -39,6 +40,13 @@ class Summarizer(commands.Cog):
         embed_summarizer = discord.Embed(title="What you missed", description=response.text, colour=discord.Colour.blue(), timestamp=datetime.datetime.now(datetime.timezone.utc))
 
         await ctx.reply(embed = embed_summarizer)
+
+
+    
+    @summarize.error
+    async def summarize_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            await ctx.reply(f"On cooldown from using the summarize feature, try again in a few minutes.", ephemeral=True) # only / command user sees message
 
 
 
