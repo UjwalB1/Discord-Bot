@@ -25,6 +25,9 @@ class UjiBot(commands.Bot):
             if filename.endswith(".py"):
                 await self.load_extension(f"cogs.{filename[:-3]}")
 
+        await self.tree.sync()
+        print("global sync for slash commands fr")
+
 bot = UjiBot()
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
