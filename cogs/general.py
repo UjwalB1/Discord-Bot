@@ -5,8 +5,8 @@ import json
 
 class General(commands.Cog):
     def __init__(self, bot : commands.Bot):
-        self.bot = bot
-        self.welcome_channel_data = "welcome_channel.json"
+        self.bot = bot # use absolute path so the json file works within the proper folder
+        self.welcome_channel_data = os.path.join(os.path.dirname(__file__), "..", "welcome_channel.json")
 
         if not os.path.exists(self.welcome_channel_data):
             with open(self.welcome_channel_data, "w") as f:
