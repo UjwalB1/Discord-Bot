@@ -2,7 +2,6 @@ import datetime
 import discord
 import os
 from discord.ext import commands
-from discord import app_commands
 from google import genai
 from google.genai import types
 
