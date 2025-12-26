@@ -13,13 +13,17 @@ class Summarizer(commands.Cog):
 
 
 
-    @commands.hybrid_command(name="summarize", description="Uji bot summarizes the last 200 messages in the channel, ignoring bot messages.")
+    @commands.hybrid_command(name="summarize", description="Summarize last 200 messages in a channel (default: current), it will be goofy.")
     @commands.cooldown(1, 600, commands.BucketType.guild) # add cooldown so I don't use all my tokens rapidly
-    async def summarize(self, ctx):
+    async def summarize(self, ctx, channel: discord.TextChannel = None):
         await ctx.defer()
+        
+        if channel is None:
+            channel = ctx.channel
+        
         messages = []
 
-        async for msg in ctx.channel.history(limit=200):
+        async for msg in channel.history(limit=200):
             if not msg.author.bot and msg.content:
                 messages.append(f"{msg.author.display_name}: {msg.clean_content}") # ignore irrelevant messages n also format for gemini to understand stuff better
 
