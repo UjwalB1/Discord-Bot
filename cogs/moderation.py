@@ -1,96 +1,93 @@
-import discord
-from discord.ext import commands
 import datetime
 
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+UNIT_SECONDS = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+MAX_TIMEOUT_SECONDS = 28 * 86400  # Discord's limit
+
+
+def action_embed(title, member, colour, reason):
+    embed = discord.Embed(title=title, description=f"{member.mention} has been {title.lower()}.", colour=colour, timestamp=discord.utils.utcnow())
+    embed.add_field(name="Reason", value=reason, inline=False)
+    embed.set_thumbnail(url=member.display_avatar.url)
+    return embed
+
+
+async def notify(member, message, reason):
+    # DM before removing them; closed DMs shouldn't stop the action
+    try:
+        await member.send(f"{message}\nReason: {reason}")
+    except discord.HTTPException:
+        pass
+
+
 class Moderation(commands.Cog):
-    def __init__(self, bot : commands.Bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    async def can_moderate(self, ctx, member):
+        if member == ctx.author:
+            await ctx.send("You can't do that to yourself.")
+            return False
+        if member.id == ctx.guild.owner_id or (ctx.author.id != ctx.guild.owner_id and member.top_role >= ctx.author.top_role):
+            await ctx.send("You can't moderate someone with an equal or higher role.")
+            return False
+        if member.top_role >= ctx.guild.me.top_role:
+            await ctx.send("My role isn't high enough to do that.")
+            return False
+        return True
 
-
-
-    @commands.command(name="temporary_mute", aliases=["tm", "tempm", "tmute", "timeout"])
-    @commands.has_permissions(administrator=True)
-    async def temp_mute(self, ctx, member: discord.Member, time_amount: int, duration_type: str, *, reason: str = None): #apparently * makes it greedy
-        if reason is None:
-            reason = "no reason was given"
-            
-        # convert to expected duration type 
-        if duration_type.lower() == "s":
-            duration = datetime.timedelta(seconds=time_amount)
-        elif duration_type.lower() == "m":
-            duration = datetime.timedelta(minutes=time_amount)
-        elif duration_type.lower() == "h":
-            duration = datetime.timedelta(hours=time_amount)
-        elif duration_type.lower() == "d":
-            duration = datetime.timedelta(days=time_amount)
-        else:
-            await ctx.send("Error: Duration type must be s, m, h, or d")
+    @commands.hybrid_command(name="timeout", aliases=["tm", "tempm", "tmute", "temporary_mute"], description="Time out a member, e.g. 10 m.")
+    @commands.guild_only()
+    @commands.has_permissions(moderate_members=True)
+    @commands.bot_has_permissions(moderate_members=True)
+    @app_commands.describe(amount="How long, e.g. 10", unit="s, m, h, or d")
+    async def timeout_member(self, ctx, member: discord.Member, amount: int, unit: str, *, reason: str = "No reason given"):
+        unit = unit.lower()
+        if unit not in UNIT_SECONDS or amount <= 0:
+            await ctx.send("Duration must be a positive number followed by s, m, h, or d.")
             return
-        
-        # check if person being tm'd is already tm'd
+
+        seconds = amount * UNIT_SECONDS[unit]
+        if seconds > MAX_TIMEOUT_SECONDS:
+            await ctx.send("Timeouts can't be longer than 28 days.")
+            return
         if member.is_timed_out():
-            await ctx.send(f"{member.mention} is already temp muted")
+            await ctx.send(f"{member.mention} is already timed out.")
             return
-        
+        if not await self.can_moderate(ctx, member):
+            return
 
-        try:
-            await member.timeout(duration, reason=reason)
-            # shows all details after temp muting
-            embed_tm = discord.Embed(title="Temp mute", description=f"{member.mention} has been muted", colour=discord.Colour.purple(), timestamp=datetime.datetime.now(datetime.timezone.utc))
-            embed_tm.add_field(name="Reason:", value=reason, inline=False)
-            embed_tm.add_field(name="Duration:", value=f"{time_amount}{duration_type}", inline=False)
-            await ctx.reply(embed=embed_tm )
-            
-        except discord.Forbidden:
-            await ctx.send("I don't have permission to timeout members.")
+        await member.timeout(datetime.timedelta(seconds=seconds), reason=f"{ctx.author}: {reason}")
+        embed = action_embed("Timed out", member, discord.Colour.purple(), reason)
+        embed.add_field(name="Duration", value=f"{amount}{unit}", inline=False)
+        await ctx.send(embed=embed)
 
-
-
-    @commands.command()
+    @commands.hybrid_command(description="Kick a member from the server.")
+    @commands.guild_only()
     @commands.has_permissions(kick_members=True)
-    async def kick(self,ctx, member: discord.Member, *, reason: str = None):
-        if reason is None:
-            reason = f"no reason was given for being kicked from {ctx.message.guild.name}"
-        else:
-            reason = reason + f", you've been kicked from {ctx.message.guild.name}"
+    @commands.bot_has_permissions(kick_members=True)
+    async def kick(self, ctx, member: discord.Member, *, reason: str = "No reason given"):
+        if not await self.can_moderate(ctx, member):
+            return
 
-        try:
-            embed_kick = discord.Embed(title="Kick", description=f"{member.mention} has been kicked!", colour=discord.Colour.red(), timestamp=datetime.datetime.now(datetime.timezone.utc))
-            embed_kick.add_field(name="Reason:", value=reason, inline=False)
-            embed_kick.set_thumbnail(url=member.display_avatar.url)
-            await ctx.reply(embed=embed_kick)
-            
-            await member.send(embed=embed_kick)
-            await member.kick()
-        except discord.Forbidden:
-            await ctx.send("I don't have permission to kick members.")
+        await notify(member, f"You've been kicked from {ctx.guild.name}.", reason)
+        await member.kick(reason=f"{ctx.author}: {reason}")
+        await ctx.send(embed=action_embed("Kicked", member, discord.Colour.red(), reason))
 
-
-
-
-
-    @commands.command()
+    @commands.hybrid_command(description="Ban a member from the server.")
+    @commands.guild_only()
     @commands.has_permissions(ban_members=True)
-    async def ban(self,ctx, member: discord.Member, *, reason: str = None):
-        if reason is None:
-            reason = f"no reason was given for being banned from {ctx.message.guild.name}"
-        else:
-            reason = reason + f", you've been banned from {ctx.message.guild.name}"
+    @commands.bot_has_permissions(ban_members=True)
+    async def ban(self, ctx, member: discord.Member, *, reason: str = "No reason given"):
+        if not await self.can_moderate(ctx, member):
+            return
 
-        try:
-            embed_kick = discord.Embed(title="ban", description=f"{member.mention} has been banned!?", colour=discord.Colour.dark_red(), timestamp=datetime.datetime.now(datetime.timezone.utc))
-            embed_kick.add_field(name="Reason:", value=reason, inline=False)
-            embed_kick.set_thumbnail(url=member.display_avatar.url)
-            await ctx.reply(embed=embed_kick)
-            
-            await member.send(embed=embed_kick)
-            await member.ban()
-        except discord.Forbidden:
-            await ctx.send("I don't have permission to ban members.")
-
-
-
+        await notify(member, f"You've been banned from {ctx.guild.name}.", reason)
+        await member.ban(reason=f"{ctx.author}: {reason}")
+        await ctx.send(embed=action_embed("Banned", member, discord.Colour.dark_red(), reason))
 
 
 async def setup(bot):
