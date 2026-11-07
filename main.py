@@ -32,10 +32,12 @@ class UjiBot(commands.Bot):
         print(f"Logged in as {self.user}")
 
     async def on_command_error(self, ctx, error):
-        if isinstance(error, (commands.CommandNotFound, commands.NotOwner)):
+        if isinstance(error, commands.CommandNotFound):
             return
 
-        if isinstance(error, commands.CommandOnCooldown):
+        if isinstance(error, commands.NotOwner):
+            await ctx.send("Only the bot owner can use this.")
+        elif isinstance(error, commands.CommandOnCooldown):
             minutes = math.ceil(error.retry_after / 60)
             await ctx.send(f"On cooldown, try again in {minutes} min.", ephemeral=True)
         elif isinstance(error, commands.MissingPermissions):
