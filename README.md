@@ -1,27 +1,51 @@
-## Uji, Discord-Bot
-Uji is a simple multi-purpose Discord bot built with Discord.py, which is a API wrapper for Discord, and incorporates Google Gemini API for one of its features. In general a fun, bot with a mixture of moderation, general discord features like welcoming new members, as well as a unique summarization feature.
+# Uji Bot
 
-# Core features:
-- Summarize (/summarize, or uji summarize): A command that can be used every 10 minutes within a Discord server, that fetches the last 200 messages from the message history of any target channel and summarizes in an unserious and potential snarky manner while still covering most details, using AI to provide the summary after fetching the messages and providing it to Gemini. Since it uses Gemini, it is rate limited to 20 uses per day (free plan)
+A Discord bot written in Python. It handles moderation, welcomes new members, answers questions with a magic 8-ball, and uses Google's Gemini API to summarize recent chat.
 
-- 8ball (uji 8ball {insert question} ): A simple fun gimmick command which responds with a yes or no answer in different ways selecting a different response out of the prewritten choices at random. In rare cases the bot may answer in a wild way instead of a providing a yes or no answer.
+[Invite Uji to your server](https://discord.com/oauth2/authorize?client_id=1450929907638206565&permissions=8&integration_type=0&scope=applications.commands+bot) (asks for administrator so every command works). The bot is hosted for free and stays up as long as the server is renewed each week.
 
-- Welcome System: Uses a JSON file to store server specific data, ensuring Uji remembers the set welcome channel even after a potential server shut down. If a dedicated channel is setup, Uji will welcome new members upon them joining in the target channel, otherwise welcomes in another channel that it has permission to do so in.
-(uji sw {channel ping} ) to set the welcome channel.
+## Commands
 
-- Moderation: Is capable of the simple expected moderation actions such as temporary muting/timing out, kicking, and banning members.
-(uji kick, uji ban, can be used followed by pinging the user targeted.
-(uji tm {duration} {duration type} for timeouts, for example, uji tm @user 45 s (s, h, d, representing seconds, hours, days, respectively.)
+Every command works as a slash command (`/kick`) or with the `uji ` prefix (`uji kick`).
 
+| Command | What it does | Who can use it |
+| --- | --- | --- |
+| `summarize [channel]` | Summarizes the last 200 messages in a channel. Once every 10 minutes per server, and about 20 times a day on Gemini's free plan. | Anyone who can read that channel |
+| `timeout <member> <amount> <s/m/h/d> [reason]` | Times out a member for up to 28 days | Timeout Members |
+| `kick <member> [reason]` | Kicks a member and DMs them the reason | Kick Members |
+| `ban <member> [reason]` | Bans a member and DMs them the reason | Ban Members |
+| `set_welcome <channel>` | Sets where welcome messages are posted | Manage Server |
+| `8ball <question>` | Answers a yes or no question | Anyone |
+| `uji sync` | Registers slash commands with Discord | Bot owner |
 
-NOTE: May have to adjust the role permissions, and the hierarchy within discord servers to make sure all commands work. For example, only those with permissions can use moderation commands, and the bot itself needs permission to do certain actions.
+Moderators can't act on members whose role is equal to or higher than their own. The bot's role also has to be above anyone it moderates.
 
-# Installation and Requirement extra:
-This project uses two API keys, a bot token from Discord, as well as an API key from Gemini which are stored in private .env files
-Dependencies can be installed from the requirements.txt file, pip install -r requirements.txt
+## Setup
 
-The bot is hosted for free, and should be up as long as I renew my server every week.
+1. Install Python 3.10 or newer, then run `pip install -r requirements.txt`.
+2. Create a bot in the [Discord Developer Portal](https://discord.com/developers/applications) and turn on the Server Members and Message Content intents.
+3. Invite it to your server with the `bot` and `applications.commands` scopes.
+4. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
+5. Create a `.env` file in the project folder:
 
-Uji bot can be invited via this link, which will ask you to provide administrator permissions so all commands can work smoothly:
+   ```
+   DISCORD_TOKEN=your-discord-token
+   GEMINI_KEY=your-gemini-key
+   ```
 
-[bot invite link](https://discord.com/oauth2/authorize?client_id=1450929907638206565&permissions=8&integration_type=0&scope=applications.commands+bot)
+6. Run `python main.py`, then type `uji sync` in your server once so the slash commands show up.
+
+## Project layout
+
+```
+main.py          Starts the bot, loads every file in cogs/, handles command errors
+cogs/
+  general.py     Welcome messages and welcome channel settings
+  moderation.py  Timeout, kick, ban
+  summarizer.py  Gemini chat summaries
+  gimmicks.py    Magic 8-ball
+```
+
+## Privacy
+
+`summarize` sends message text and display names from the chosen channel to Google's Gemini API.
